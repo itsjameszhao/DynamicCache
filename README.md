@@ -1,5 +1,7 @@
 # DynamicCache
-[DynamicCache: A Sharded and Replicated Key-Value Cache with Dynamic Shard Replication](DynamicCache.pdf) Final project for Building Distributed Systems (CS 426) class at Yale. 
+[DynamicCache: A Sharded and Replicated Key-Value Cache with Dynamic Shard Replication](DynamicCache.pdf) 
+
+Final project for Building Distributed Systems (CS 426) class at Yale. 
 
 # Abstract
 Caching is widely used to increase application throughput and latency. However, changing load conditions (read/write access patterns,  query distribution) often hinder a cache from achieving optimal performance. Modifying the cache such that it dynamically alters its sharding and replication in response to varying workload conditions can largely improve cache performance. We present DynamicCache, a dynamic key-value cache that adapts sharding and replication to optimize for throughput and latency under dynamic access patterns. For evaluations, we run simulated queries with changing load distributions, demonstrating that DynamicCache is able to adapt shard replication to query patterns and achieves superior performance in query latency and throughput (up to 66\% latency and 18\% throughput improvements) compared to the baselines.

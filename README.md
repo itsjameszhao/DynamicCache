@@ -1,5 +1,5 @@
 # DynamicCache
-[DynamicCache: A Sharded and Replicated Key-Value Cache with Dynamic Shard Replication](DynamicCache.pdf)
+[DynamicCache: A Sharded and Replicated Key-Value Cache with Dynamic Shard Replication](DynamicCache.pdf) Final project for Building Distributed Systems (CS 426) class at Yale. 
 
 # Abstract
 Caching is widely used to increase application throughput and latency. However, changing load conditions (read/write access patterns,  query distribution) often hinder a cache from achieving optimal performance. Modifying the cache such that it dynamically alters its sharding and replication in response to varying workload conditions can largely improve cache performance. We present DynamicCache, a dynamic key-value cache that adapts sharding and replication to optimize for throughput and latency under dynamic access patterns. For evaluations, we run simulated queries with changing load distributions, demonstrating that DynamicCache is able to adapt shard replication to query patterns and achieves superior performance in query latency and throughput (up to 66\% latency and 18\% throughput improvements) compared to the baselines.
@@ -44,6 +44,15 @@ Average shard write latency comparison for DynamicCache, Baseline-1, and Baselin
 
 System throughput comparison for DynamicCache, Baseline-1, and Baseline-5.
 
+We first evaluate how dynamically adjusting shard replication performs in terms of read latency. The read comparison figure compares the average per-shard read latency between the three setups (DynamicCache, Baseline-1, and Baseline-5). We observe that using shard manager improves the average shard read latency. This is because adding more shard replica spreads out the read requests, alleviating lock contention under high load scenario. DynamicCache consistently outperforms Baseline-1 and Baseline-5 across all number of goroutines, and the improvement brought by the shard manager increases as the number of goroutines increases. With 256 number of goroutines, Baseline-5 with the maximum number of shard replicas (5) suffers from up to 66% times compared to DynamicCache. This suggests that in the high-contention scenario (larger number of goroutines) always having a high number of replicas may not be a good strategy due to replicated write requests for multiple shard replicas. On the flip side, we observe that always using a low shard replication is not optimal either, Baseline-1 is up to 26% slower than DynamicCache in read latency. This evaluation illustrates the importance of dynamically adjusting shard replication factor.
+
+We observe similar trend with average shard write latency, as shown in the write comparison figure, showing that DynamicCache improves the write performance even with more write requests. We note that the write latency for baseline with 5 shard replicas is much higher than DynamicCache and Baseline-1, indicating that over-provisioning the shard replicas (by picking the maximum replication factor) degrades the write performance, as expected. Notably, DynamicCache achieves 39% latency improvement compared to Baseline-5. By monitoring when the shard becomes hotter or cooler, DynamicCache is able to remove unnecessary replicas from a less-requested shard thereby minimizing the unnecessary read requests.
+
+In the throughput comparison figure, we see that DynamicCache outperforms both the Baseline-1 and Baseline-5, indicating that the dynamic balancing of shard replicas improves throughput performance, up to 18%. We believe that by dynamically adjusting the shard replication, DynamicCache is able to adapt to changing workloads and ensure that there is no hot key or unnecessarily replicated shards, thereby achieving high throughput. We conduct experiments with both uniform and hot key query patterns. For uniform query patterns we generate 100 keys evenly spread out across the five shards, while for hot key we generate keys that will be hashed to the same shard. 
+
+# Conclusion
+
+We have presented DynamicCache, a sharded and replicated key-value cache that dynamically allocates shard replicas. Our evaluation shows that DynamicCache is able to outperforms the baseline with one replica and the baseline with 5 replica (upper bound of number of shard replica) in terms of per-shard read and write latency, while achieving comparable throughput compared to the baselines.
 
 
 

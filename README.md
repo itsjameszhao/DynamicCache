@@ -1,4 +1,4 @@
-# DynamicCache
+# DynamicCache Usage
 
 DynamicCache is a system that is dynamic system that is able to use per-shard latency to manage the ShardManager for optimal latencies and througput. This system can be divided into three main sections: Shard Manager, P99Latency, Base Server.  
 
@@ -121,7 +121,3 @@ For refrence, this section will describe the files that are modified for this pr
 `/kv/server.go` This file has the server implementation that we modified to ensure minimal bottlenecks. 
 
 Additionally, we have a script that we used for generating images. There are present under `/scripts`
-
-#Group Contributions
-
-We divided our project into three main sections which each of us worked on with help from eacother. Rohan handled updating the server implemenation to ensure new concurrent locking, Ziming worked on the P99Latency, and James developed the ShardManager.go. However, we all debugged issues together and worked relative equal hours on the project. We all contributed to the write-up as well. 

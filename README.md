@@ -27,19 +27,19 @@ We compare DynamicCache with both Baseline-1 and Baseline-5 as we want to invest
 In this evaluation, we control the number of goroutines to vary the amount of contention on our system. We measure the average per-shard read latency, average per-shard write latency, and throughput of the compared systems.
 
 <p align="center">
-  <img align="center" width="273" alt="image" src="https://user-images.githubusercontent.com/18220413/191398671-c2200ddc-3ee3-41cf-a5be-43bd482c950c.png">
+  <img align="center" width="600" alt="image" src="https://user-images.githubusercontent.com/18220413/191398671-c2200ddc-3ee3-41cf-a5be-43bd482c950c.png">
 </p>
  
 Average per-shard read latency comparison for DynamicCache, Baseline-1, Baseline-5. The Y-axis records the average per-shard read latency, measured in microseconds.
 
 <p align="center">
-  <img align="center" width="278" alt="image" src="https://user-images.githubusercontent.com/18220413/191398710-d1134775-fc66-44cc-8c74-39fe2a977f30.png">
+  <img align="center" width="600" alt="image" src="https://user-images.githubusercontent.com/18220413/191398710-d1134775-fc66-44cc-8c74-39fe2a977f30.png">
 </p>
 
 Average shard write latency comparison for DynamicCache, Baseline-1, and Baseline-5. The Y-axis records the average per-shard read latency, measured in microseconds. 
 
 <p align="center">
-  <img align="center" width="278" alt="image" src="https://user-images.githubusercontent.com/18220413/191398745-8258e000-fc0a-44d4-8d81-ff0345024ca7.png">
+  <img align="center" width="600" alt="image" src="https://user-images.githubusercontent.com/18220413/191398745-8258e000-fc0a-44d4-8d81-ff0345024ca7.png">
 </p>
 
 System throughput comparison for DynamicCache, Baseline-1, and Baseline-5.

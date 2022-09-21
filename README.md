@@ -5,12 +5,12 @@ DynamicCache: A Sharded and Replicated Key-Value Cache with Dynamic Shard Replic
 Caching is widely used to increase application throughput and latency. However, changing load conditions (read/write access patterns,  query distribution) often hinder a cache from achieving optimal performance. Modifying the cache such that it dynamically alters its sharding and replication in response to varying workload conditions can largely improve cache performance. We present DynamicCache, a dynamic key-value cache that adapts sharding and replication to optimize for throughput and latency under dynamic access patterns. For evaluations, we run simulated queries with changing load distributions, demonstrating that DynamicCache is able to adapt shard replication to query patterns and achieves superior performance in query latency and throughput (up to 66\% latency and 18\% throughput improvements) compared to the baselines.
 
 # Design
-<img width="389" alt="image" src="https://user-images.githubusercontent.com/18220413/191397895-255a1eb6-7202-4b6b-8be6-1d8cdf1de1ae.png">
+<img align="center" width="389" alt="image" src="https://user-images.githubusercontent.com/18220413/191397895-255a1eb6-7202-4b6b-8be6-1d8cdf1de1ae.png">
 
 Our distributed cache system. A User Client sends Get and Set requests for a certain key k and the requests are automatically sent to the relevant node(s). Each node contains instrumentation monitoring per-shard-replica latency $T$ and $RPS$. The Shard Manager periodically pulls latency $T$ and $RPS$ from each of the nodes, and uses this information to issue add / drop shard replicas commands to the distributed cache.
 
 # Algorithm
-<img width="262" alt="image" src="https://user-images.githubusercontent.com/18220413/191398108-1a9c8eb1-79f3-4e63-950d-e6d5ad77db81.png">
+<img align="center" width="262" alt="image" src="https://user-images.githubusercontent.com/18220413/191398108-1a9c8eb1-79f3-4e63-950d-e6d5ad77db81.png">
 
 Algorithm 1 summarizes the process using per-shard latency $T$ as an example. For implementation, we considered both $RPS$ and $T$ as indicators of shard load. $C_{max}$ is an array which indicates the maximum number of shard replicas per shard. $[C_1, C_2, ...]$. $C_{replicas}$ is an array that stores the current number of shard replicas for each shard. Shard number is used as the index of the two arrays. $get\_shard\_latency(i)$ obtains per-shard-replica from each node and calculates per-shard latency by averaging per-shard-replica latency over all replicas of the shard. Thus, when a shard experiences high per-shard read or write latency, shard manager will add a shard replica to a node where that particular shard has not been placed. Data from old shard replicas will be copied to the new shard replica to ensure that all shard replicas share the same content. Similarly, when a shard experiences low write latency but still have redundant shard replicas, shard manager will remove a shard replica from that shard. This is to reduce the resource usage if the shard does not need to handle high workload and do not need many shard replicas. The freed shard replicas are returned back to a \textit{pool} of available shard replicas and can then be used for other hot shards.
 
@@ -19,17 +19,17 @@ Evaluations are done on Apple Macbook with 10 CPU cores, 16 GB of memory.
 
 We compare DynamicCache with Baseline-1 (shard manager disabled with shard replication set to 1) and Baseline-5 with shard replica count set to 5. We also set the maximum number of shard replicas DynamicCache can have to 5, meaning that the shard manager will not allocate more replicas than this amount.
 
-We compare DynamicCache with both Baseline-1 and Baseline-5 as we want to investigate whether the potential improvement is brought by \textit{dynamically adjusting shard replicas} or \textit{adding more shards}. 
+We compare DynamicCache with both Baseline-1 and Baseline-5 as we want to investigate whether the potential improvement is brought by dynamically adjusting shard replicas or adding more shards. 
 
 In this evaluation, we control the number of goroutines to vary the amount of contention on our system. We measure the average per-shard read latency, average per-shard write latency, and throughput of the compared systems.
 
-<img width="273" alt="image" src="https://user-images.githubusercontent.com/18220413/191398671-c2200ddc-3ee3-41cf-a5be-43bd482c950c.png">
+<img align="center" width="273" alt="image" src="https://user-images.githubusercontent.com/18220413/191398671-c2200ddc-3ee3-41cf-a5be-43bd482c950c.png">
 Average per-shard read latency comparison for DynamicCache, Baseline-1, Baseline-5. The Y-axis records the average per-shard read latency, measured in microseconds.
 
-<img width="278" alt="image" src="https://user-images.githubusercontent.com/18220413/191398710-d1134775-fc66-44cc-8c74-39fe2a977f30.png">
+<img align="center" width="278" alt="image" src="https://user-images.githubusercontent.com/18220413/191398710-d1134775-fc66-44cc-8c74-39fe2a977f30.png">
 Average shard write latency comparison for DynamicCache, Baseline-1, and Baseline-5. The Y-axis records the average per-shard read latency, measured in microseconds. 
 
-<img width="278" alt="image" src="https://user-images.githubusercontent.com/18220413/191398745-8258e000-fc0a-44d4-8d81-ff0345024ca7.png">
+<img align="center" width="278" alt="image" src="https://user-images.githubusercontent.com/18220413/191398745-8258e000-fc0a-44d4-8d81-ff0345024ca7.png">
 System throughput comparison for DynamicCache, Baseline-1, and Baseline-5.
 
 

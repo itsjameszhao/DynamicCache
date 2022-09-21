@@ -1,60 +1,127 @@
 # DynamicCache
-[DynamicCache: A Sharded and Replicated Key-Value Cache with Dynamic Shard Replication](DynamicCache.pdf) 
 
-Final project for Building Distributed Systems (CS 426) class at Yale. 
+DynamicCache is a system that is dynamic system that is able to use per-shard latency to manage the ShardManager for optimal latencies and througput. This system can be divided into three main sections: Shard Manager, P99Latency, Base Server.  
 
-# Abstract
-Caching is widely used to increase application throughput and latency. However, changing load conditions (read/write access patterns,  query distribution) often hinder a cache from achieving optimal performance. Modifying the cache such that it dynamically alters its sharding and replication in response to varying workload conditions can largely improve cache performance. We present DynamicCache, a dynamic key-value cache that adapts sharding and replication to optimize for throughput and latency under dynamic access patterns. For evaluations, we run simulated queries with changing load distributions, demonstrating that DynamicCache is able to adapt shard replication to query patterns and achieves superior performance in query latency and throughput (up to 66\% latency and 18\% throughput improvements) compared to the baselines.
+## Shard Manager
+This section conisists of the Shard Manager which based on performance metrics is able to modify the configuration of the ShardMap for optimal results. 
 
-# Design
-<p align="center">
-  <img align="center" width="389" alt="image" src="https://user-images.githubusercontent.com/18220413/191397895-255a1eb6-7202-4b6b-8be6-1d8cdf1de1ae.png">
-</p>
-Our distributed cache system. A User Client sends Get and Set requests for a certain key k and the requests are automatically sent to the relevant node(s). Each node contains instrumentation monitoring per-shard-replica latency $T$ and $RPS$. The Shard Manager periodically pulls latency $T$ and $RPS$ from each of the nodes, and uses this information to issue add / drop shard replicas commands to the distributed cache.
+### Usage
 
-# Algorithm
-<p align="center">
-  <img align="center" width="600" alt="image" src="https://user-images.githubusercontent.com/18220413/191398108-1a9c8eb1-79f3-4e63-950d-e6d5ad77db81.png">
-</p>
+Be in `/cmd/shardmanager` working directory. Then execute the following command with customizable flags. 
 
-Algorithm 1 summarizes the process using per-shard latency $T$ as an example. For implementation, we considered both $RPS$ and $T$ as indicators of shard load. $C_{max}$ is an array which indicates the maximum number of shard replicas per shard. $[C_1, C_2, ...]$. $C_{replicas}$ is an array that stores the current number of shard replicas for each shard. Shard number is used as the index of the two arrays. $get\_shard\_latency(i)$ obtains per-shard-replica from each node and calculates per-shard latency by averaging per-shard-replica latency over all replicas of the shard. Thus, when a shard experiences high per-shard read or write latency, shard manager will add a shard replica to a node where that particular shard has not been placed. Data from old shard replicas will be copied to the new shard replica to ensure that all shard replicas share the same content. Similarly, when a shard experiences low write latency but still have redundant shard replicas, shard manager will remove a shard replica from that shard. This is to reduce the resource usage if the shard does not need to handle high workload and do not need many shard replicas. The freed shard replicas are returned back to a pool of available shard replicas and can then be used for other hot shards.
+`go run shardmanager.go -num-goros <int> -enabled <bool> -numshards <int> -numnodes <int> -max-replicas <int> -latency-max <float> -latency-min <float>`
 
-# Results and Performance Data
-Evaluations are done on Apple Macbook with 10 CPU cores, 16 GB of memory.
+`-num-goros <int>`: this flag is to modify the number of go routines per system to increase the load on the current system. Default: 16
 
-We compare DynamicCache with Baseline-1 (shard manager disabled with shard replication set to 1) and Baseline-5 with shard replica count set to 5. We also set the maximum number of shard replicas DynamicCache can have to 5, meaning that the shard manager will not allocate more replicas than this amount.
+`-enabled <bool>`: this flag enables the ShardManager. If set to false it runs without ShardManager. Default: false
 
-We compare DynamicCache with both Baseline-1 and Baseline-5 as we want to investigate whether the potential improvement is brought by dynamically adjusting shard replicas or adding more shards. 
+`-numshards <int>`: this modifies the number of shards present in the system created. Default: 5 
 
-In this evaluation, we control the number of goroutines to vary the amount of contention on our system. We measure the average per-shard read latency, average per-shard write latency, and throughput of the compared systems.
+`-numnodes <int>`: this modifies the number of nodes present in the system created. Default: 5 
 
-<p align="center">
-  <img align="center" width="600" alt="image" src="https://user-images.githubusercontent.com/18220413/191398671-c2200ddc-3ee3-41cf-a5be-43bd482c950c.png">
-</p>
- 
-Average per-shard read latency comparison for DynamicCache, Baseline-1, Baseline-5. The Y-axis records the average per-shard read latency, measured in microseconds.
+`-max-replicas <int>`: this is the maximum number of replicas per shard that can be created with the Shard Manager. Default: 5 
 
-<p align="center">
-  <img align="center" width="600" alt="image" src="https://user-images.githubusercontent.com/18220413/191398710-d1134775-fc66-44cc-8c74-39fe2a977f30.png">
-</p>
+`-latency-max <int>`: latency threshold before another shard is created. Default: 15000 
 
-Average shard write latency comparison for DynamicCache, Baseline-1, and Baseline-5. The Y-axis records the average per-shard read latency, measured in microseconds. 
+`-latency-min <int>`: latency threshold before a shard is removed. Default: 10000 
 
-<p align="center">
-  <img align="center" width="600" alt="image" src="https://user-images.githubusercontent.com/18220413/191398745-8258e000-fc0a-44d4-8d81-ff0345024ca7.png">
-</p>
+### Walkthrough 
 
-System throughput comparison for DynamicCache, Baseline-1, and Baseline-5.
+This will be a detailed step-by-step walkthrough for how to use DynamicCACHE for an example, utilizing different flags. 
 
-We first evaluate how dynamically adjusting shard replication performs in terms of read latency. The read comparison figure compares the average per-shard read latency between the three setups (DynamicCache, Baseline-1, and Baseline-5). We observe that using shard manager improves the average shard read latency. This is because adding more shard replica spreads out the read requests, alleviating lock contention under high load scenario. DynamicCache consistently outperforms Baseline-1 and Baseline-5 across all number of goroutines, and the improvement brought by the shard manager increases as the number of goroutines increases. With 256 number of goroutines, Baseline-5 with the maximum number of shard replicas (5) suffers from up to 66% times compared to DynamicCache. This suggests that in the high-contention scenario (larger number of goroutines) always having a high number of replicas may not be a good strategy due to replicated write requests for multiple shard replicas. On the flip side, we observe that always using a low shard replication is not optimal either, Baseline-1 is up to 26% slower than DynamicCache in read latency. This evaluation illustrates the importance of dynamically adjusting shard replication factor.
+#### ShardManager Active
 
-We observe similar trend with average shard write latency, as shown in the write comparison figure, showing that DynamicCache improves the write performance even with more write requests. We note that the write latency for baseline with 5 shard replicas is much higher than DynamicCache and Baseline-1, indicating that over-provisioning the shard replicas (by picking the maximum replication factor) degrades the write performance, as expected. Notably, DynamicCache achieves 39% latency improvement compared to Baseline-5. By monitoring when the shard becomes hotter or cooler, DynamicCache is able to remove unnecessary replicas from a less-requested shard thereby minimizing the unnecessary read requests.
+This section will have an active shard manager flag and will use 64 go routines. The numshards, numnodes, max-replicas and latency thresholds are set to the default amount. 
 
-In the throughput comparison figure, we see that DynamicCache outperforms both the Baseline-1 and Baseline-5, indicating that the dynamic balancing of shard replicas improves throughput performance, up to 18%. We believe that by dynamically adjusting the shard replication, DynamicCache is able to adapt to changing workloads and ensure that there is no hot key or unnecessarily replicated shards, thereby achieving high throughput. We conduct experiments with both uniform and hot key query patterns. For uniform query patterns we generate 100 keys evenly spread out across the five shards, while for hot key we generate keys that will be hashed to the same shard. 
+First we must be in the right directory: `cd /cmd/shardmanager`
 
-# Conclusion
-
-We have presented DynamicCache, a sharded and replicated key-value cache that dynamically allocates shard replicas. Our evaluation shows that DynamicCache is able to outperforms the baseline with one replica and the baseline with 5 replica (upper bound of number of shard replica) in terms of per-shard read and write latency, while achieving comparable throughput compared to the baselines.
+Run this command: `go run shardmanager.go -enabled=true -num-goros=64`
 
 
+There may be a case in which the program fails, we've found that sometimes we overload the  constraints of our local machine, so we ask that you either reduce the number of go-routines or re-run the program. You should be able to obtain the proper result then. 
 
+The results should resemble this:
+
+<pre>
+INFO[0002] Read latencies are [144871 490072 314785 288654 262332] Write latencies are [2468307 5951554 4372755 4142116 4341976] 
+INFO[0003] Read latencies are [70836 52569 30124 2000 161190] Write latencies are [4372755 4142116 4341976 2468307 5951554] 
+INFO[0004] Read latencies are [2000 4212 1295 1000 80544] Write latencies are [4372755 4142116 4341976 2468307 5951554] 
+INFO[0005] Read latencies are [1000 1000 42767 1000 2000] Write latencies are [4341976 2468307 5951554 4372755 4142116] 
+INFO[0006] Read latencies are [1000 1000 8007 1000 1318] Write latencies are [4341976 2468307 5951554 4372755 4142116] 
+INFO[0006] Time elapsed %v seconds, Number of requests %v, throughput (RPS) %v6.068778238 12928000 2.1302474989894163e+06 
+</pre>
+
+However, the results may be different due to the your systems computer architecture. 
+
+#### ShardManager Not Active
+
+Thi section will not have an active ShardManager, but will maintain the other flags as the same. 
+
+Run this command: `go run shardmanager.go -enabled=false -num-goros=64`
+
+The results should resemble this:
+
+<pre>
+INFO[0002] Read latencies are [317786 246388 452511 398244 350288] Write latencies are [3191144 3021419 5072443 4026545 3564017] 
+INFO[0003] Read latencies are [95008 60634 167789 161789 122484] Write latencies are [3191144 3021419 5072443 4026545 3564017] 
+INFO[0004] Read latencies are [18740 3513 2000 51887 49096] Write latencies are [3564017 3191144 3021419 5072443 4026545] 
+INFO[0005] Read latencies are [2000 1379 1000 3747 2346] Write latencies are [3564017 3191144 3021419 5072443 4026545] 
+INFO[0006] Read latencies are [1000 1000 1937 1692 1000] Write latencies are [3191144 3021419 5072443 4026545 3564017] 
+INFO[0006] Time elapsed %v seconds, Number of requests %v, throughput (RPS) %v6.047678447 12928000 2.1376797321988116e+06 
+</pre>
+
+However, the results may be different due to the your systems computer architecture. 
+
+## P99Latency
+
+While the ShardManager is the main deliverable for this project, there were many other sections that we needed to develop in order for the ShardManager to work effectively. P99Latency is where we developed our per-shard latency calculation. For this section, we will just explain how to  test our implementation. 
+
+For this section we must be in: `/kv/test` directory. In here there is a file named: p99_test.go which contains our implementation tests.
+
+### Testing
+
+To test our implementation, run the following command:
+
+`go test -v -run='TestP99'`
+
+The results should resemble this: 
+
+<pre>
+=== RUN   TestP99Basic
+--- PASS: TestP99Basic (1.00s)
+=== RUN   TestP99MultiShard
+--- PASS: TestP99MultiShard (1.66s)
+=== RUN   TestP99TwoNodeMultiShard
+--- PASS: TestP99TwoNodeMultiShard (1.65s)
+=== RUN   TestP99FourNodesFiveShard
+--- PASS: TestP99FourNodesFiveShard (1.98s)
+=== RUN   TestP99ConcurrentGetsAndSets
+--- PASS: TestP99ConcurrentGetsAndSets (2.74s)
+=== RUN   TestP99ConcurrentGetsAndSets2
+--- PASS: TestP99ConcurrentGetsAndSets2 (26.04s)
+PASS
+</pre>
+
+## Overall System Testing
+
+Aside from our specific implementation testing, building upon the tests for Lab4, we attempted to test our system through all of Lab4 tests. Our system should also pass the following command, which runs all of the tests. 
+
+`go test -v`
+
+#Modified Files
+
+For refrence, this section will describe the files that are modified for this project if you would like ot take a further look. 
+
+`/cmd/shardmanager/shardmanager.go` This file has the implementation the dynamic shard manager
+
+`/kv/p99.go` This file maintains the new p99 listener that we developed. Figure 1 in the paper. 
+
+`/kv/test/p99_test.go` Maintains our implementation tests for our new latency listener.
+
+`/kv/server.go` This file has the server implementation that we modified to ensure minimal bottlenecks. 
+
+Additionally, we have a script that we used for generating images. There are present under `/scripts`
+
+#Group Contributions
+
+We divided our project into three main sections which each of us worked on with help from eacother. Rohan handled updating the server implemenation to ensure new concurrent locking, Ziming worked on the P99Latency, and James developed the ShardManager.go. However, we all debugged issues together and worked relative equal hours on the project. We all contributed to the write-up as well. 

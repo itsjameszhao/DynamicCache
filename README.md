@@ -12,7 +12,7 @@ Our distributed cache system. A User Client sends Get and Set requests for a cer
 
 # Algorithm
 <p align="center">
-  <img align="center" width="262" alt="image" src="https://user-images.githubusercontent.com/18220413/191398108-1a9c8eb1-79f3-4e63-950d-e6d5ad77db81.png">
+  <img align="center" width="600" alt="image" src="https://user-images.githubusercontent.com/18220413/191398108-1a9c8eb1-79f3-4e63-950d-e6d5ad77db81.png">
 </p>
 
 Algorithm 1 summarizes the process using per-shard latency $T$ as an example. For implementation, we considered both $RPS$ and $T$ as indicators of shard load. $C_{max}$ is an array which indicates the maximum number of shard replicas per shard. $[C_1, C_2, ...]$. $C_{replicas}$ is an array that stores the current number of shard replicas for each shard. Shard number is used as the index of the two arrays. $get\_shard\_latency(i)$ obtains per-shard-replica from each node and calculates per-shard latency by averaging per-shard-replica latency over all replicas of the shard. Thus, when a shard experiences high per-shard read or write latency, shard manager will add a shard replica to a node where that particular shard has not been placed. Data from old shard replicas will be copied to the new shard replica to ensure that all shard replicas share the same content. Similarly, when a shard experiences low write latency but still have redundant shard replicas, shard manager will remove a shard replica from that shard. This is to reduce the resource usage if the shard does not need to handle high workload and do not need many shard replicas. The freed shard replicas are returned back to a \textit{pool} of available shard replicas and can then be used for other hot shards.
